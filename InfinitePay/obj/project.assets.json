@@ -611,19 +611,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\User\\.nuget\\packages\\": {}
+    "C:\\Users\\Pedro\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\RiderProjects\\InfinitePay\\InfinitePay\\InfinitePay.csproj",
+      "projectUniqueName": "C:\\Users\\Pedro\\source\\repos\\AbarePizzarias\\InfinitePay-Relatorio\\InfinitePay\\InfinitePay.csproj",
       "projectName": "InfinitePay",
-      "projectPath": "C:\\Users\\User\\RiderProjects\\InfinitePay\\InfinitePay\\InfinitePay.csproj",
-      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\RiderProjects\\InfinitePay\\InfinitePay\\obj\\",
+      "projectPath": "C:\\Users\\Pedro\\source\\repos\\AbarePizzarias\\InfinitePay-Relatorio\\InfinitePay\\InfinitePay.csproj",
+      "packagesPath": "C:\\Users\\Pedro\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Pedro\\source\\repos\\AbarePizzarias\\InfinitePay-Relatorio\\InfinitePay\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Pedro\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -631,7 +631,8 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "https://api.nuget.org/v3/index.json": {}
+        "https://api.nuget.org/v3/index.json": {},
+        "https://nuget.pkg.github.com/AbarePizzarias/index.json": {}
       },
       "frameworks": {
         "net6.0": {
@@ -673,7 +674,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.301\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.300\\RuntimeIdentifierGraph.json"
       }
     }
   }
