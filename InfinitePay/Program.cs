@@ -59,7 +59,9 @@ var transactionsResponse =
     await infinitePayClient.GetTransactions(dateFromParameter, dateToParameter, authorization);
 
 
-var transactionsIds = transactionsResponse.results.OrderBy(x => x.created_at)
+var transactionsIds = transactionsResponse.results
+    .Where(x => x.status == "approved")
+    .OrderBy(x => x.created_at)
     .Select(x => x.nsu);
 
 var transactionsDetails = new List<TransactionDetailsResponse>();
@@ -90,6 +92,11 @@ using (var stringWriter = new StreamWriter(fileName))
     stringWriter.Write("	</head>");
     stringWriter.Write("");
     stringWriter.Write("	<body>");
+    
+    
+    stringWriter.Write("<div class=\"alert alert-success\" role=\"alert\">");
+    stringWriter.Write($"Periodo: {dayFrom}/{monthFrom}/{yearFrom} - {dayTo}/{monthTo}/{yearTo}");
+    stringWriter.Write("</div>");
 
 
     stringWriter.Write("<table class=\"table table-bordered\">");
@@ -97,6 +104,7 @@ using (var stringWriter = new StreamWriter(fileName))
     stringWriter.Write("<tr>");
     stringWriter.Write("<th scope=\"col\">Cliente</th>");
     stringWriter.Write("<th scope=\"col\">Bandeira</th>");
+    stringWriter.Write("<th scope=\"col\">Metodo</th>");
     stringWriter.Write("<th scope=\"col\">Data</th>");
     stringWriter.Write("<th scope=\"col\">Valor cobrado R$</th>");
     stringWriter.Write("<th scope=\"col\">Valor recebido R$</th>");
@@ -117,6 +125,15 @@ using (var stringWriter = new StreamWriter(fileName))
         stringWriter.Write("</td>");
 
         stringWriter.Write($"<td>{transactionDetailResponse.buyer_details.card_brand}");
+        stringWriter.Write("</td>");
+
+        var paymentMethod = transactionDetailResponse.payment_method == "debit"
+            ? "Débito"
+            : transactionDetailResponse.payment_method == "credit"
+                ? "Crédito"
+                : "";
+        
+        stringWriter.Write($"<td>{paymentMethod}");
         stringWriter.Write("</td>");
 
         stringWriter.Write($"<td>{transactionDetailResponse.created_at.Date}");
@@ -142,7 +159,7 @@ using (var stringWriter = new StreamWriter(fileName))
     var totalTax = transactionsDetails.Sum(x => x.tax_amount).ToString("N3");
 
     stringWriter.Write("<tr>");
-    stringWriter.Write("<th colspan=\"3\">TOTAL");
+    stringWriter.Write("<th colspan=\"4\">TOTAL");
     stringWriter.Write("</th>");
     stringWriter.Write($"<th>R$ {totalCharged}");
     stringWriter.Write("</th>");
