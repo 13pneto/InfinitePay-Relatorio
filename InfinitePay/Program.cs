@@ -115,10 +115,13 @@ using (var stringWriter = new StreamWriter(fileName))
 
     stringWriter.Write("<tbody>");
 
+    var percentages = new List<decimal>();
+    
     foreach (var transactionDetailResponse in transactionsDetails)
     {
         var taxPercentage = (transactionDetailResponse.tax_amount / transactionDetailResponse.net_amount) * 100;
-
+        percentages.Add(taxPercentage);
+        
         stringWriter.Write("<tr>");
 
         stringWriter.Write($"<td>{transactionDetailResponse.buyer_details.name}");
@@ -158,14 +161,16 @@ using (var stringWriter = new StreamWriter(fileName))
     var totalCharged = transactionsDetails.Sum(x => x.amount).ToString("N3");
     var totalTax = transactionsDetails.Sum(x => x.tax_amount).ToString("N3");
 
+    var averageTaxPercentage = percentages.Average().ToString("N3");
+
     stringWriter.Write("<tr>");
-    stringWriter.Write("<th colspan=\"4\">TOTAL");
+    stringWriter.Write($"<th colspan=\"4\">TOTAL - {transactionsDetails.Count}");
     stringWriter.Write("</th>");
     stringWriter.Write($"<th>R$ {totalCharged}");
     stringWriter.Write("</th>");
     stringWriter.Write($"<th>R$ {totalReceipt}");
     stringWriter.Write("</th>");
-    stringWriter.Write($"<th>");
+    stringWriter.Write($"<th>~ {averageTaxPercentage}");
     stringWriter.Write("</th>");
     stringWriter.Write($"<th>R$ {totalTax}");
     stringWriter.Write("</th>");
