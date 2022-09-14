@@ -178,6 +178,63 @@ using (var stringWriter = new StreamWriter(fileName))
 
 
     stringWriter.Write("</tbody>");
+    stringWriter.Write("</table>");
+    
+    
+    stringWriter.Write("<hr> </hr>");
+
+    stringWriter.Write("<div class=\"row\">");
+    
+    stringWriter.Write("<div class=\"col-6\">");
+
+    stringWriter.Write("<table class=\"table table-bordered\">");
+    stringWriter.Write("<thead>");
+    stringWriter.Write("<tr>");
+    stringWriter.Write("<th scope=\"col\">Dia</th>");
+    stringWriter.Write("<th scope=\"col\">Total bruto</th>");
+    stringWriter.Write("<th scope=\"col\">Total Liquido</th>");
+    stringWriter.Write("</tr>");
+    stringWriter.Write("</thead>");
+
+    stringWriter.Write("<tbody>");
+    
+    for (int i = 1; i <= 31; i++)
+    {
+        stringWriter.Write("<tr>");
+
+       
+        var numberString = i.ToString();
+        if (i < 10)
+        {
+            numberString = 0 + numberString;
+        }
+        
+        var totalLiquido = transactionsDetails
+            .Where(x => x.created_at.ToString().StartsWith(numberString))
+            .Sum(x => x.net_amount)
+            .ToString("N3");
+
+        var totalBruto = transactionsDetails
+            .Where(x => x.created_at.ToString().StartsWith(numberString))
+            .Sum(x => x.amount)
+            .ToString("N3");
+
+        stringWriter.Write($"<td>{numberString}");
+        stringWriter.Write("</td>");
+
+        stringWriter.Write($"<td>{totalBruto}");
+        stringWriter.Write("</td>");
+
+        stringWriter.Write($"<td>{totalLiquido}");
+        stringWriter.Write("</td>");
+    }
+    stringWriter.Write("</tbody>");
+    
+    stringWriter.Write("</div>");
+    stringWriter.Write("</table>");
+    stringWriter.Write("</div>");
+
+    
 
 
     stringWriter.Write("	</body>");
