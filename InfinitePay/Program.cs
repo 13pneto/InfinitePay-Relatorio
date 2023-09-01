@@ -6,57 +6,84 @@ using InfinitePay.Responses;
 using Refit;
 
 
-var infinitePayClient = RestService.For<IInfinitePayClient>("https://api.infinitepay.io");
 
-string authorization = null;
+var infinitePayClient = RestService
+    .For<IInfinitePayClient>(new HttpClient(new InfinitePayAuthenticationHandler())
+    {
+        BaseAddress = new Uri("https://api.infinitepay.io")
+    });
 
-string dayFrom = null;
-string monthFrom = null;
-string yearFrom = null;
+DateOnly dateFrom = default;
+DateOnly dateTo = default;
+var now = DateTime.Now;
 
-string dayTo = null;
-string monthTo = null;
-string yearTo = null;
-
-var isValid = false;
-
-while (isValid == false)
-{
     try
     {
-        Console.WriteLine("Informe o authorization:");
-        authorization = Console.ReadLine();
+        var isValidAuth = false;
+        while (isValidAuth == false)
+        {
+            Console.WriteLine("Informe o authorization:");
+            var authorization = Console.ReadLine();
+            
+            isValidAuth = authorization.Length > 10;
 
-        Console.WriteLine("Data inicio: ex: 01/01/2022");
-        var dateFrom = Console.ReadLine();
+            Auth.Token = authorization;
+        }
+        
+        var isValidDateFrom = false;
+        while (isValidDateFrom == false)
+        {
+            Console.WriteLine("Data inicio: ex:1/1/22 (DEIXE VAZIO PARA MÊS ANTERIOR)");
+            var dateFromString = Console.ReadLine();
 
-        Console.WriteLine("Data final: ex: 31/01/2022");
-        var dateTo = Console.ReadLine();
+            if (dateFromString is {Length: 0})
+            {
+                dateFrom = new DateOnly(now.Year, now.Month == 1 ? 12 : now.Month - 1, 01);
+                isValidDateFrom = true;
+            }
+            else
+            {
+                isValidDateFrom = DateOnly.TryParse(dateFromString, out dateFrom);   
+            }
+        }
+        
+        var isValidDateTo = false;
+        while (isValidDateTo == false)
+        {
+            Console.WriteLine("Data final: ex: 1/2/22 (DEIXE VAZIO PARA MÊS ATUAL)");
+            var dateToString = Console.ReadLine();
 
-        var dateFromSplit = dateFrom.Split('/');
-        dayFrom = dateFromSplit[0];
-        monthFrom = dateFromSplit[1];
-        yearFrom = dateFromSplit[2];
-
-        var dateToSplit = dateTo.Split('/');
-        dayTo = dateToSplit[0];
-        monthTo = dateToSplit[1];
-        yearTo = dateToSplit[2];
-
-        isValid = true;
+            if (dateToString is {Length: 0})
+            {
+                dateTo = new DateOnly(now.Year, now.Month, 01);
+                isValidDateTo = true;
+            }
+            else
+            {
+                isValidDateTo = DateOnly.TryParse(dateToString, out dateTo);
+            }
+        }
+	
     }
     catch (Exception e)
     {
         Console.WriteLine(e);
     }
-}
 
 
-var dateFromParameter = $"{yearFrom}-{monthFrom}-{dayFrom}";
-var dateToParameter = $"{yearTo}-{monthTo}-{dayTo}";
+var dateFromParameter =
+    (new DateTimeOffset(dateFrom.Year, dateFrom.Month, dateFrom.Day, 0, 0, 0, TimeSpan.FromHours(-3)))
+    .ToString("O");
+var dateToParameter = 
+    (new DateTimeOffset(dateTo.Year, dateTo.Month, dateTo.Day, 0, 0, 0, TimeSpan.FromHours(-3)))
+    .ToString("O");
+
+	Console.WriteLine(dateFromParameter);
+	Console.WriteLine(dateToParameter);
+
 
 var transactionsResponse =
-    await infinitePayClient.GetTransactions(dateFromParameter, dateToParameter, authorization);
+    await infinitePayClient.GetTransactions(dateFromParameter, dateToParameter);
 
 
 var transactionsIds = transactionsResponse.results
@@ -68,7 +95,7 @@ var transactionsDetails = new List<TransactionDetailsResponse>();
 
 foreach (var transactionsId in transactionsIds)
 {
-    var transactionDetailsResponse = await infinitePayClient.GetTransactionDetails(transactionsId, authorization);
+    var transactionDetailsResponse = await infinitePayClient.GetTransactionDetails(transactionsId);
     transactionsDetails.Add(transactionDetailsResponse);
 }
 
@@ -79,8 +106,8 @@ if (Directory.Exists(folderPath) == false)
 }
 
 var fileName =
-    @$"{folderPath}\relatorio-infinitepay-de{dayFrom}-{monthFrom}-{yearFrom}" +
-    $"-ate-{dayTo}-{monthTo}-{yearTo}.html";
+    @$"{folderPath}\relatorio-infinitepay-de{dateFrom.Day}-{dateFrom.Month}-{dateFrom.Year}" +
+    $"-ate-{dateTo.Day}-{dateTo.Month}-{dateTo.Year}.html";
 
 using (var stringWriter = new StreamWriter(fileName))
 {
@@ -95,7 +122,7 @@ using (var stringWriter = new StreamWriter(fileName))
     
     
     stringWriter.Write("<div class=\"alert alert-success\" role=\"alert\">");
-    stringWriter.Write($"Periodo: {dayFrom}/{monthFrom}/{yearFrom} - {dayTo}/{monthTo}/{yearTo}");
+    stringWriter.Write($"Periodo: {dateFrom.ToString("dd/MM/yyyy")} - {dateTo.ToString("dd/MM/yyyy")}");
     stringWriter.Write("</div>");
 
 
@@ -170,7 +197,7 @@ using (var stringWriter = new StreamWriter(fileName))
     stringWriter.Write("</th>");
     stringWriter.Write($"<th>R$ {totalReceipt}");
     stringWriter.Write("</th>");
-    stringWriter.Write($"<th>~ {averageTaxPercentage}");
+    stringWriter.Write($"<th>~ {averageTaxPercentage} %");
     stringWriter.Write("</th>");
     stringWriter.Write($"<th>R$ {totalTax}");
     stringWriter.Write("</th>");
@@ -192,12 +219,13 @@ using (var stringWriter = new StreamWriter(fileName))
     stringWriter.Write("<tr>");
     stringWriter.Write("<th scope=\"col\">Dia</th>");
     stringWriter.Write("<th scope=\"col\">Total bruto</th>");
-    stringWriter.Write("<th scope=\"col\">Total Liquido</th>");
+    stringWriter.Write("<th scope=\"col\">Total liquido</th>");
+    stringWriter.Write("<th scope=\"col\">Total taxas</th>");
     stringWriter.Write("</tr>");
     stringWriter.Write("</thead>");
 
     stringWriter.Write("<tbody>");
-    
+
     for (int i = 1; i <= 31; i++)
     {
         stringWriter.Write("<tr>");
@@ -211,21 +239,24 @@ using (var stringWriter = new StreamWriter(fileName))
         
         var totalLiquido = transactionsDetails
             .Where(x => x.created_at.ToString().StartsWith(numberString))
-            .Sum(x => x.net_amount)
-            .ToString("N3");
+            .Sum(x => x.net_amount);
 
         var totalBruto = transactionsDetails
             .Where(x => x.created_at.ToString().StartsWith(numberString))
-            .Sum(x => x.amount)
-            .ToString("N3");
+            .Sum(x => x.amount);
 
         stringWriter.Write($"<td>{numberString}");
         stringWriter.Write("</td>");
 
-        stringWriter.Write($"<td>{totalBruto}");
+        stringWriter.Write($"<td> R$ {totalBruto.ToString("N3")}");
         stringWriter.Write("</td>");
 
-        stringWriter.Write($"<td>{totalLiquido}");
+        stringWriter.Write($"<td> R$ {totalLiquido.ToString("N3")}");
+        stringWriter.Write("</td>");
+
+        var diff = totalBruto - totalLiquido;
+        
+        stringWriter.Write($"<td> R$ {diff.ToString("N3")}");
         stringWriter.Write("</td>");
     }
     stringWriter.Write("</tbody>");
